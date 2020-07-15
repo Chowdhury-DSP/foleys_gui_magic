@@ -87,7 +87,7 @@ void Decorator::drawDecorator (juce::Graphics& g, juce::Rectangle<int> bounds)
 
         g.setColour (captionColour);
 
-        g.setFont (captionSize * 0.8f);
+        g.setFont (juce::Font (captionSize * 0.8f).boldened());
         g.drawFittedText (caption, clientBounds.caption, justification.getOnlyHorizontalFlags(), 1);
     }
 }
@@ -134,7 +134,7 @@ Decorator::ClientBounds Decorator::getClientBounds (juce::Rectangle<int> overall
             captionBox = box.removeFromBottom (captionSize).toNearestInt();
         else
         {
-            juce::Font f (captionSize * 0.8f);
+            juce::Font f (captionSize * 0.8f, juce::Font::bold);
             auto w = f.getStringWidth (caption);
 
             if (justification.getOnlyHorizontalFlags() & juce::Justification::left)
