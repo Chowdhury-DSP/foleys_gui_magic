@@ -145,7 +145,7 @@ void Container::updateLayout()
         if (layout == Layout::Tabbed)
         {
             updateTabbedButtons();
-            tabbedButtons->setBounds (clientBounds.removeFromTop (30));
+            tabbedButtons->setBounds (clientBounds.removeFromTop (40));
         }
         else
             tabbedButtons.reset();
