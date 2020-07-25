@@ -51,6 +51,8 @@ public:
 
     static const juce::Identifier  pSliderTextBox;
     static const juce::StringArray pTextBoxPositions;
+    static const juce::Identifier  pSliderTextBoxWidth;
+    static const juce::Identifier  pSliderTextBoxHeight;
 
     static const juce::Identifier  pValue;
     static const juce::Identifier  pMinValue;
@@ -93,16 +95,18 @@ public:
             slider.setSliderStyle (juce::Slider::IncDecButtons);
 
         auto textbox = getProperty (pSliderTextBox).toString();
+        int textBoxWidth = getProperty (pSliderTextBoxWidth);
+        int textBoxHeight = getProperty (pSliderTextBoxHeight);
         if (textbox == pTextBoxPositions [0])
-            slider.setTextBoxStyle (juce::Slider::NoTextBox, false, slider.getTextBoxWidth(), slider.getTextBoxHeight());
+            slider.setTextBoxStyle (juce::Slider::NoTextBox, false, textBoxWidth, textBoxHeight);
         else if (textbox == pTextBoxPositions [1])
-            slider.setTextBoxStyle (juce::Slider::TextBoxAbove, false, slider.getTextBoxWidth(), slider.getTextBoxHeight());
+            slider.setTextBoxStyle (juce::Slider::TextBoxAbove, false, textBoxWidth, textBoxHeight);
         else if (textbox == pTextBoxPositions [3])
-            slider.setTextBoxStyle (juce::Slider::TextBoxLeft, false, slider.getTextBoxWidth(), slider.getTextBoxHeight());
+            slider.setTextBoxStyle (juce::Slider::TextBoxLeft, false, textBoxWidth, textBoxHeight);
         else if (textbox == pTextBoxPositions [4])
-            slider.setTextBoxStyle (juce::Slider::TextBoxRight, false, slider.getTextBoxWidth(), slider.getTextBoxHeight());
+            slider.setTextBoxStyle (juce::Slider::TextBoxRight, false, textBoxWidth, textBoxHeight);
         else
-            slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, slider.getTextBoxWidth(), slider.getTextBoxHeight());
+            slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, textBoxWidth, textBoxHeight);
 
         double minValue = getProperty (pMinValue);
         double maxValue = getProperty (pMaxValue);
@@ -152,6 +156,8 @@ const juce::Identifier  SliderItem::pSliderType   { "slider-type" };
 const juce::StringArray SliderItem::pSliderTypes  { "auto", "linear-horizontal", "linear-vertical", "rotary", "rotary-horizontal-vertical", "inc-dec-buttons" };
 const juce::Identifier  SliderItem::pSliderTextBox    { "slider-textbox" };
 const juce::StringArray SliderItem::pTextBoxPositions { "no-textbox", "textbox-above", "textbox-below", "textbox-left", "textbox-right" };
+const juce::Identifier  SliderItem::pSliderTextBoxWidth { "slidertext-width" };
+const juce::Identifier  SliderItem::pSliderTextBoxHeight { "slidertext-height" };
 const juce::Identifier  SliderItem::pValue      { "value" };
 const juce::Identifier  SliderItem::pMinValue   { "min-value" };
 const juce::Identifier  SliderItem::pMaxValue   { "max-value" };

@@ -128,15 +128,15 @@ Decorator::ClientBounds Decorator::getClientBounds (juce::Rectangle<int> overall
 
     if (caption.isNotEmpty())
     {
+        juce::Font f (captionSize * 0.8f, juce::Font::bold);
+        auto w = f.getStringWidth (caption);
+
         if (justification.getOnlyVerticalFlags() & juce::Justification::top)
             captionBox = box.removeFromTop (captionSize).toNearestInt();
         else if (justification.getOnlyVerticalFlags() & juce::Justification::bottom)
             captionBox = box.removeFromBottom (captionSize).toNearestInt();
         else
         {
-            juce::Font f (captionSize * 0.8f, juce::Font::bold);
-            auto w = f.getStringWidth (caption);
-
             if (justification.getOnlyHorizontalFlags() & juce::Justification::left)
                 captionBox = box.removeFromLeft (w).toNearestInt();
             else if (justification.getOnlyHorizontalFlags() & juce::Justification::right)
