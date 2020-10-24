@@ -102,7 +102,7 @@ private:
 
     std::unique_ptr<MagicGUIBuilder> builder;
 
-    juce::TooltipWindow tooltip      { this };
+    // juce::TooltipWindow tooltip      { this };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicPluginEditor)
 };

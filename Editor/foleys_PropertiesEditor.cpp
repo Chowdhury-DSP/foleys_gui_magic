@@ -238,6 +238,7 @@ void PropertiesEditor::addNodeProperties()
 void PropertiesEditor::addDecoratorProperties()
 {
     juce::Array<juce::PropertyComponent*> array;
+    array.add (new StyleTextPropertyComponent (builder, IDs::name, styleItem));
     array.add (new StyleChoicePropertyComponent (builder, IDs::visibility, styleItem, builder.createPropertiesMenuLambda()));
     array.add (new StyleTextPropertyComponent (builder, IDs::caption, styleItem));
     array.add (new StyleTextPropertyComponent (builder, IDs::captionSize, styleItem));
