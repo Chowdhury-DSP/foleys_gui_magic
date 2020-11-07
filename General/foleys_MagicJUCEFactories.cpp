@@ -246,6 +246,7 @@ public:
         });
 
         addAndMakeVisible (button);
+        button.setClickingTogglesState (true);
     }
 
     juce::String getButtonText() const noexcept
