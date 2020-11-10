@@ -226,6 +226,7 @@ public:
     FOLEYS_DECLARE_GUI_FACTORY (TextButtonItem)
 
     static const juce::Identifier pText;
+    static const juce::Identifier pTextOn;
     static const juce::Identifier pOnClick;
 
     TextButtonItem (MagicGUIBuilder& builder, const juce::ValueTree& node) : GuiItem (builder, node)
@@ -239,6 +240,13 @@ public:
         });
 
         addAndMakeVisible (button);
+        button.setClickingTogglesState (true);
+    }
+
+    juce::String getButtonText() const noexcept
+    {
+        auto textID = button.getToggleState() ? pTextOn : pText;
+        return magicBuilder.getStyleProperty (textID, configNode);
     }
 
     void update() override
@@ -249,11 +257,14 @@ public:
         if (parameter.isNotEmpty())
             attachment = getMagicState().createAttachment (parameter, button);
 
-        button.setButtonText (magicBuilder.getStyleProperty (pText, configNode));
+        button.setButtonText (getButtonText());
 
         auto triggerID = getProperty (pOnClick).toString();
-        if (triggerID.isNotEmpty())
-            button.onClick = getMagicState().getTrigger (triggerID);
+        auto triggerFunc = triggerID.isNotEmpty() ? getMagicState().getTrigger (triggerID) : [] {};
+        button.onClick = [=] {
+            triggerFunc();
+            button.setButtonText (getButtonText());
+        };
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -262,6 +273,7 @@ public:
 
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pText, SettableProperty::Text, {}, {} });
+        props.push_back ({ configNode, pTextOn, SettableProperty::Text, {}, {} });
         props.push_back ({ configNode, pOnClick, SettableProperty::Choice, {}, magicBuilder.createTriggerMenuLambda() });
 
         return props;
@@ -279,6 +291,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextButtonItem)
 };
 const juce::Identifier TextButtonItem::pText    { "text" };
+const juce::Identifier TextButtonItem::pTextOn  { "text_on" };
 const juce::Identifier TextButtonItem::pOnClick { "onClick" };
 
 
