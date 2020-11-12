@@ -240,7 +240,6 @@ public:
         });
 
         addAndMakeVisible (button);
-        button.setClickingTogglesState (true);
     }
 
     juce::String getButtonText() const noexcept
@@ -257,6 +256,7 @@ public:
         if (parameter.isNotEmpty())
             attachment = getMagicState().createAttachment (parameter, button);
 
+        button.setClickingTogglesState (parameter.isNotEmpty());
         button.setButtonText (getButtonText());
 
         auto triggerID = getProperty (pOnClick).toString();
