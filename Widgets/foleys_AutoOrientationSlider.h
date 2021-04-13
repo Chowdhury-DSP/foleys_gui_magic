@@ -72,6 +72,15 @@ public:
         juce::Slider::resized();
     }
 
+    void mouseDrag (const juce::MouseEvent& e) override
+    {
+        auto numSources = juce::Desktop::getInstance().getNumDraggingMouseSources();
+        if (numSources > 1)
+            return;
+
+        juce::Slider::mouseDrag (e);
+    }
+
 private:
 
     bool autoOrientation = true;

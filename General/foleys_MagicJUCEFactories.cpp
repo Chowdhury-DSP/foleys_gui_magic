@@ -146,6 +146,15 @@ public:
         return &slider;
     }
 
+    void mouseDrag (const juce::MouseEvent& e) override
+    {
+        auto numSources = juce::Desktop::getInstance().getNumDraggingMouseSources();
+        if (numSources > 1)
+            return;
+
+        GuiItem::mouseDrag (e);
+    }
+
 private:
     AutoOrientationSlider slider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attachment;
