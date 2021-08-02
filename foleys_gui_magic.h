@@ -41,7 +41,7 @@
     name:          Foleys GUI magic
     description:   This module allows to create GUI with a drag and drop editor
     dependencies:  juce_core, juce_audio_basics, juce_audio_devices, juce_audio_formats,
-                   juce_audio_utils, juce_audio_processors, juce_gui_basics, juce_dsp
+                   juce_audio_utils, juce_audio_processors, juce_gui_basics
 
     website:       https://foleysfinest.com/
     license:       Dual license: non commercial under BSD V2 3-clause
@@ -83,7 +83,12 @@
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+
+#if CHOWDSP_USE_CUSTOM_JUCE_DSP
+#include <chowdsp_juce_dsp/chowdsp_juce_dsp.h>
+#else
 #include <juce_dsp/juce_dsp.h>
+#endif
 
 #if JUCE_MODULE_AVAILABLE_juce_opengl && FOLEYS_ENABLE_OPEN_GL_CONTEXT
 #include <juce_opengl/juce_opengl.h>
