@@ -202,7 +202,7 @@ public:
     {
         attachment.reset();
 
-        auto paramID = configNode.getProperty (IDs::parameter, juce::String()).toString();
+        auto paramID = getControlledParameterID ({});
         if (paramID.isNotEmpty())
         {
             if (auto* parameter = getMagicState().getParameter (paramID))
@@ -219,6 +219,11 @@ public:
         std::vector<SettableProperty> props;
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         return props;
+    }
+
+    juce::String getControlledParameterID (juce::Point<int>) override
+    {
+        return configNode.getProperty (IDs::parameter, juce::String()).toString();
     }
 
     juce::Component* getWrappedComponent() override
@@ -268,7 +273,7 @@ public:
     {
         attachment.reset();
 
-        auto parameter = configNode.getProperty (IDs::parameter, juce::String()).toString();
+        auto parameter = getControlledParameterID ({});
         if (parameter.isNotEmpty())
             attachment = getMagicState().createAttachment (parameter, button);
 
@@ -295,13 +300,38 @@ public:
         return props;
     }
 
+    juce::String getControlledParameterID (juce::Point<int>) override
+    {
+        return configNode.getProperty (IDs::parameter, juce::String()).toString();
+    }
+
     juce::Component* getWrappedComponent() override
     {
         return &button;
     }
 
 private:
-    juce::TextButton button;
+    class NoModsTextButton : public juce::TextButton
+    {
+    public:
+        NoModsTextButton() = default;
+
+        void mouseDown (const juce::MouseEvent& e) override
+        {
+            if (e.mods.isAnyModifierKeyDown())
+                return;
+
+            juce::TextButton::mouseDown (e);
+        }
+        void mouseUp (const juce::MouseEvent& e) override
+        {
+            if (e.mods.isAnyModifierKeyDown())
+                return;
+
+            juce::TextButton::mouseUp (e);
+        }
+    } button;
+
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextButtonItem)
@@ -336,7 +366,7 @@ public:
     void update() override
     {
         attachment.reset();
-        auto parameter = configNode.getProperty (IDs::parameter, juce::String()).toString();
+        auto parameter = getControlledParameterID ({});
         if (parameter.isNotEmpty())
             attachment = getMagicState().createAttachment (parameter, button);
 
@@ -354,6 +384,11 @@ public:
         props.push_back ({ configNode, IDs::parameter, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pValue, SettableProperty::Choice, {}, magicBuilder.createPropertiesMenuLambda() });
         return props;
+    }
+
+    juce::String getControlledParameterID (juce::Point<int>) override
+    {
+        return configNode.getProperty (IDs::parameter, juce::String()).toString();
     }
 
     juce::Component* getWrappedComponent() override

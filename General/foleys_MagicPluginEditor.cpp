@@ -169,4 +169,28 @@ void MagicPluginEditor::resized()
     processorState.setLastEditorSize (getWidth(), getHeight());
 }
 
+int MagicPluginEditor::getControlParameterIndex (juce::Component& c)
+{
+    juce::Component* comp = &c;
+    const auto& valueTreeState = processorState.getValueTreeState();
+    int count = 0;
+    while (comp != nullptr && count < 3) // loop through parents up two levels
+    {
+        if (auto* item = dynamic_cast<GuiItem*> (comp))
+        {
+            auto paramID = item->getControlledParameterID ({});
+            if (paramID.isNotEmpty())
+            {
+                if (const auto* param = valueTreeState.getParameter (paramID))
+                    return param->getParameterIndex();
+            }
+        }
+
+        comp = comp->getParentComponent();
+        count++;
+    }
+
+    return -1;
+}
+
 } // namespace foleys

@@ -87,6 +87,8 @@ public:
 
     void resized() override;
 
+    int getControlParameterIndex (juce::Component&) override;
+
 private:
     void initialise (const char* data = nullptr, int dataSize = 0);
 
