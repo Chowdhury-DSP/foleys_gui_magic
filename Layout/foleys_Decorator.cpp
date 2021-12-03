@@ -138,9 +138,9 @@ Decorator::ClientBounds Decorator::getClientBounds (juce::Rectangle<int> overall
         else
         {
             if (justification.getOnlyHorizontalFlags() & juce::Justification::left)
-                captionBox = box.removeFromLeft (w).toNearestInt();
+                captionBox = box.removeFromLeft ((float) w).toNearestInt();
             else if (justification.getOnlyHorizontalFlags() & juce::Justification::right)
-                captionBox = box.removeFromRight (w).toNearestInt();
+                captionBox = box.removeFromRight ((float) w).toNearestInt();
         }
     }
 
