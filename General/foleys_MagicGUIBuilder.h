@@ -60,6 +60,11 @@ public:
     void setConfigTree (const char* data, int dataSize);
 
     /**
+     Use this method to have the GUI builder ignore certain component IDs
+     */
+    void setIdsToIgnore (std::initializer_list<juce::Identifier> newIdsToIgnore) { idsToIgnore = std::move (newIdsToIgnore); }
+
+    /**
      Create a node from the description
      */
     std::unique_ptr<GuiItem> createGuiItem (const juce::ValueTree& node);
@@ -239,7 +244,9 @@ private:
 
     std::unique_ptr<juce::Component> overlayDialog;
 
-    std::map<juce::Identifier, std::unique_ptr<GuiItem>(*)(MagicGUIBuilder& builder, const juce::ValueTree&)> factories;
+    std::map<juce::Identifier, std::unique_ptr<GuiItem> (*) (MagicGUIBuilder& builder, const juce::ValueTree&)> factories;
+
+    juce::Array<juce::Identifier> idsToIgnore;
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
     bool editMode = false;

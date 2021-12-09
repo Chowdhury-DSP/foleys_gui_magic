@@ -65,11 +65,14 @@ std::unique_ptr<GuiItem> MagicGUIBuilder::createGuiItem (const juce::ValueTree& 
 {
     if (node.getType() == IDs::view)
     {
-        auto item = std::make_unique<Container>(*this, node);
+        auto item = std::make_unique<Container> (*this, node);
         item->updateInternal();
         item->createSubComponents();
         return item;
     }
+
+    if (idsToIgnore.contains (node.getType()))
+        return {};
 
     auto factory = factories.find (node.getType());
     if (factory != factories.end())
