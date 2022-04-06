@@ -45,6 +45,7 @@ GuiItem::GuiItem (MagicGUIBuilder& builder, juce::ValueTree node)
     setInterceptsMouseClicks (false, true);
 
     visibility.addListener (this);
+    enabled.addListener (this);
     configNode.addListener (this);
 }
 
@@ -134,6 +135,10 @@ void GuiItem::configureComponent()
     auto  visibilityNode = magicBuilder.getStyleProperty (IDs::visibility, configNode);
     if (! visibilityNode.isVoid())
         visibility.referTo (magicBuilder.getMagicState().getPropertyAsValue (visibilityNode.toString()));
+
+    auto  enabledNode = magicBuilder.getStyleProperty (IDs::enabled, configNode);
+    if (! enabledNode.isVoid())
+        enabled.referTo (magicBuilder.getMagicState().getPropertyAsValue (enabledNode.toString()));
 }
 
 void GuiItem::configureFlexBoxItem (const juce::ValueTree& node)
@@ -228,6 +233,9 @@ void GuiItem::valueChanged (juce::Value& source)
 {
     if (source == visibility)
         setVisible (visibility.getValue());
+
+    if (source == enabled)
+        setEnabled (enabled.getValue());
 }
 
 void GuiItem::valueTreePropertyChanged (juce::ValueTree& treeThatChanged, const juce::Identifier&)

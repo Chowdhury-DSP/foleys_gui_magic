@@ -191,6 +191,7 @@ private:
     void configureComponent();
 
     juce::Value     visibility { true };
+    juce::Value     enabled { true };
 
     juce::String    highlight;
 
