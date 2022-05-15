@@ -188,6 +188,11 @@ void Container::updateTabbedButtons()
     {
         tabbedButtons->addTab (child->getTabCaption ("Tab " + juce::String (tabbedButtons->getNumTabs())),
                                child->getTabColour(), -1);
+
+        auto* newButton = tabbedButtons->getTabButton (tabbedButtons->getNumTabs() - 1);
+        newButton->setAccessible (true);
+        newButton->setWantsKeyboardFocus (true);
+        newButton->setDescription ("Tab: " + newButton->getName());
     }
 
     tabbedButtons->addChangeListener (this);
@@ -285,6 +290,11 @@ std::vector<std::unique_ptr<GuiItem>>::iterator Container::begin()
 std::vector<std::unique_ptr<GuiItem>>::iterator Container::end()
 {
     return children.end();
+}
+
+std::unique_ptr<juce::AccessibilityHandler> Container::createAccessibilityHandler()
+{
+    return std::make_unique<juce::AccessibilityHandler> (*this, juce::AccessibilityRole::group);
 }
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
