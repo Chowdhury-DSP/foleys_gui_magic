@@ -45,44 +45,17 @@ namespace foleys
 class AutoOrientationSlider  : public juce::Slider
 {
 public:
+    AutoOrientationSlider();
 
-    AutoOrientationSlider() = default;
+    void setAutoOrientation (bool shouldAutoOrient);
 
-    void setAutoOrientation (bool shouldAutoOrient)
-    {
-        autoOrientation = shouldAutoOrient;
-        resized();
-    }
+    bool keyPressed (const juce::KeyPress& key) override;
 
-    void resized() override
-    {
-        if (autoOrientation)
-        {
-            const auto w = getWidth();
-            const auto h = getHeight();
+    void resized() override;
 
-            if (w > 2 * h)
-                setSliderStyle (juce::Slider::LinearHorizontal);
-            else if (h > 2 * w)
-                setSliderStyle (juce::Slider::LinearVertical);
-            else
-                setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-        }
-
-        juce::Slider::resized();
-    }
-
-    void mouseDrag (const juce::MouseEvent& e) override
-    {
-        auto numSources = juce::Desktop::getInstance().getNumDraggingMouseSources();
-        if (numSources > 1)
-            return;
-
-        juce::Slider::mouseDrag (e);
-    }
+    void mouseDrag (const juce::MouseEvent& e) override;
 
 private:
-
     bool autoOrientation = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AutoOrientationSlider)

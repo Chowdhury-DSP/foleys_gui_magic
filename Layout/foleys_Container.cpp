@@ -279,7 +279,17 @@ void Container::updateSelectedTab()
 {
     int index = 0;
     for (auto& child : children)
-        child->setVisible (currentTab == index++);
+    {
+        const auto isSelected = (currentTab == index);
+        if (tabbedButtons != nullptr)
+        {
+            if (auto* tabButton = tabbedButtons->getTabButton (index))
+                tabButton->setDescription ("Tab: " + tabButton->getName() + (isSelected ? " (Selected)" : ""));
+        }
+
+        child->setVisible (isSelected);
+        index++;
+    }
 }
 
 std::vector<std::unique_ptr<GuiItem>>::iterator Container::begin()
