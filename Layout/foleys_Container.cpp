@@ -80,7 +80,16 @@ void Container::createSubComponents()
         auto childItem = magicBuilder.createGuiItem (childNode);
         if (childItem)
         {
-            addAndMakeVisible (childItem.get());
+            const auto group = magicBuilder.getStyleProperty (IDs::group, childNode).toString();
+            if (group.isEmpty())
+            {
+                addAndMakeVisible (childItem.get());
+            }
+            else
+            {
+                addComponentToAccessibilityGroup (group, childItem.get());
+            }
+
             childItem->createSubComponents();
 
             children.push_back (std::move (childItem));
@@ -89,6 +98,53 @@ void Container::createSubComponents()
 
     updateLayout();
     updateContinuousRedraw();
+}
+
+void Container::addComponentToAccessibilityGroup (const juce::String& groupName, juce::Component* comp)
+{
+    if (auto groupsIter = accessibilityGroups.find (groupName); groupsIter != accessibilityGroups.end())
+    {
+        groupsIter->second->addAndMakeVisible (comp);
+        return;
+    }
+
+    struct AccessibilityTabGroup : juce::Component
+    {
+        AccessibilityTabGroup (Container& cont, int containerIndex) : container (cont),
+                                                                      index (containerIndex)
+        {
+            setWantsKeyboardFocus (true);
+        }
+
+        bool keyPressed (const juce::KeyPress& key) override
+        {
+            const auto display = container.magicBuilder.getStyleProperty (IDs::display, container.configNode).toString();
+            if (display != IDs::tabbed)
+                return false;
+
+            if (key == juce::KeyPress::returnKey)
+            {
+                container.tabbedButtons->setCurrentTabIndex (index);
+                juce::AccessibilityHandler::postAnnouncement ("Selected: " + getTitle(), juce::AccessibilityHandler::AnnouncementPriority::medium);
+                return true;
+            }
+
+            return false;
+        }
+
+        Container& container;
+        const int index;
+    };
+
+    auto [newGroupIter, success] = accessibilityGroups.insert_or_assign (groupName,
+                                                                         std::make_unique<AccessibilityTabGroup> (*this,
+                                                                                                                  (int) accessibilityGroups.size()));
+
+    auto& newGroup = accessibilityGroups[groupName];
+    newGroup->setTitle (groupName);
+    newGroup->setFocusContainerType (FocusContainerType::focusContainer);
+    newGroup->addAndMakeVisible (comp);
+    addAndMakeVisible (newGroup.get());
 }
 
 GuiItem* Container::findGuiItemWithId (const juce::String& name)
@@ -122,6 +178,9 @@ void Container::setLayoutMode (Layout layoutToUse)
 
 void Container::resized()
 {
+    for (auto& [_, group] : accessibilityGroups)
+        group->setBounds (getLocalBounds());
+
     updateLayout();
 }
 
@@ -190,7 +249,7 @@ void Container::updateTabbedButtons()
                                child->getTabColour(), -1);
 
         auto* newButton = tabbedButtons->getTabButton (tabbedButtons->getNumTabs() - 1);
-        newButton->setAccessible (true);
+        newButton->setAccessible (false);
         newButton->setWantsKeyboardFocus (true);
         newButton->setDescription ("Tab: " + newButton->getName());
     }

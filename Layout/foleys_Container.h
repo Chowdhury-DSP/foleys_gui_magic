@@ -120,6 +120,7 @@ private:
 
     void updateTabbedButtons();
     void updateSelectedTab();
+    void addComponentToAccessibilityGroup (const juce::String& groupName, juce::Component* comp);
 
     int  currentTab = 0;
     int  refreshRateHz = 30;
@@ -133,6 +134,8 @@ private:
     std::vector<juce::Component::SafePointer<MagicPlotComponent>> plotComponents;
 
     std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override;
+
+    std::unordered_map<juce::String, std::unique_ptr<juce::Component>> accessibilityGroups;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Container)
 };

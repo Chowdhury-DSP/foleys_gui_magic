@@ -367,6 +367,7 @@ juce::var MagicGUIBuilder::getPropertyDefaultValue (juce::Identifier property) c
     if (property == IDs::minWidth) return 0.0;
     if (property == IDs::minHeight) return 0.0;
     if (property == IDs::display) return IDs::flexbox;
+    if (property == IDs::group) return juce::String();
 
     if (property == IDs::captionPlacement) return "centred-top";
     if (property == IDs::lookAndFeel) return "FoleysFinest";
