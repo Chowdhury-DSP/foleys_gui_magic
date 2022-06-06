@@ -135,7 +135,8 @@ private:
 
     std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override;
 
-    std::unordered_map<juce::String, std::unique_ptr<juce::Component>> accessibilityGroups;
+    std::vector<juce::String> accessibilityGroupNames;
+    juce::OwnedArray<juce::Component> accessibilityGroups;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Container)
 };

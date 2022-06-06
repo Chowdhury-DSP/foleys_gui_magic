@@ -102,10 +102,18 @@ void Container::createSubComponents()
 
 void Container::addComponentToAccessibilityGroup (const juce::String& groupName, juce::Component* comp)
 {
-    if (auto groupsIter = accessibilityGroups.find (groupName); groupsIter != accessibilityGroups.end())
     {
-        groupsIter->second->addAndMakeVisible (comp);
-        return;
+        int index = 0;
+        for (const auto& name : accessibilityGroupNames)
+        {
+            if (name == groupName)
+            {
+                accessibilityGroups[index]->addAndMakeVisible (comp);
+                return;
+            }
+
+            index++;
+        }
     }
 
     struct AccessibilityTabGroup : juce::Component
@@ -125,7 +133,9 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
             if (key == juce::KeyPress::returnKey)
             {
                 container.tabbedButtons->setCurrentTabIndex (index);
-                juce::AccessibilityHandler::postAnnouncement ("Selected: " + getTitle(), juce::AccessibilityHandler::AnnouncementPriority::medium);
+                const auto announcement = "Selected: " + getTitle().upToFirstOccurrenceOf ("(", false, false);
+                static constexpr auto priority = juce::AccessibilityHandler::AnnouncementPriority::medium;
+                juce::AccessibilityHandler::postAnnouncement (announcement, priority);
                 return true;
             }
 
@@ -136,15 +146,15 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
         const int index;
     };
 
-    auto [newGroupIter, success] = accessibilityGroups.insert_or_assign (groupName,
-                                                                         std::make_unique<AccessibilityTabGroup> (*this,
-                                                                                                                  (int) accessibilityGroups.size()));
+    accessibilityGroupNames.push_back (groupName);
+    auto* newGroup = accessibilityGroups.add (std::make_unique<AccessibilityTabGroup> (*this,
+                                                                                       (int) accessibilityGroups.size()));
 
-    auto& newGroup = accessibilityGroups[groupName];
     newGroup->setTitle (groupName);
     newGroup->setFocusContainerType (FocusContainerType::focusContainer);
     newGroup->addAndMakeVisible (comp);
-    addAndMakeVisible (newGroup.get());
+    newGroup->setInterceptsMouseClicks (false, true);
+    addAndMakeVisible (newGroup);
 }
 
 GuiItem* Container::findGuiItemWithId (const juce::String& name)
@@ -178,7 +188,7 @@ void Container::setLayoutMode (Layout layoutToUse)
 
 void Container::resized()
 {
-    for (auto& [_, group] : accessibilityGroups)
+    for (auto* group : accessibilityGroups)
         group->setBounds (getLocalBounds());
 
     updateLayout();
@@ -336,18 +346,31 @@ void Container::changeListenerCallback (juce::ChangeBroadcaster*)
 
 void Container::updateSelectedTab()
 {
-    int index = 0;
-    for (auto& child : children)
     {
-        const auto isSelected = (currentTab == index);
-        if (tabbedButtons != nullptr)
+        int index = 0;
+        for (auto& child : children)
         {
-            if (auto* tabButton = tabbedButtons->getTabButton (index))
-                tabButton->setDescription ("Tab: " + tabButton->getName() + (isSelected ? " (Selected)" : ""));
-        }
+            const auto isSelected = (currentTab == index);
+            if (tabbedButtons != nullptr)
+            {
+                if (auto* tabButton = tabbedButtons->getTabButton (index))
+                    tabButton->setDescription ("Tab: " + tabButton->getName() + (isSelected ? " (Selected)" : ""));
+            }
 
-        child->setVisible (isSelected);
-        index++;
+            child->setVisible (isSelected);
+            index++;
+        }
+    }
+
+    {
+        int index = 0;
+        for (auto* group : accessibilityGroups)
+        {
+            const auto isSelected = (currentTab == index);
+            const auto groupTitle = accessibilityGroupNames[(size_t) index] + (isSelected ? " (Selected}" : " (Not Selected)");
+            group->setTitle (groupTitle);
+            index++;
+        }
     }
 }
 

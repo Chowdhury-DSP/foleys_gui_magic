@@ -124,7 +124,6 @@ void GuiItem::configureComponent()
 
     component->setComponentID (configNode.getProperty (IDs::id, juce::String()).toString());
     component->setName (magicBuilder.getStyleProperty (IDs::name, configNode).toString());
-    component->setDescription (component->getName());
 
     if (auto* tooltipClient = dynamic_cast<juce::SettableTooltipClient*>(component))
     {

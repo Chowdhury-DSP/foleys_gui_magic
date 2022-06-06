@@ -80,6 +80,8 @@ public:
     {
         attachment.reset();
 
+        slider.setTitle (magicBuilder.getStyleProperty (IDs::name, configNode));
+
         auto type = getProperty (pSliderType).toString();
         slider.setAutoOrientation (type.isEmpty() || type == pSliderTypes [0]);
 
@@ -202,6 +204,8 @@ public:
     {
         attachment.reset();
 
+        comboBox.setDescription (magicBuilder.getStyleProperty (IDs::name, configNode));
+
         auto paramID = getControlledParameterID ({});
         if (paramID.isNotEmpty())
         {
@@ -272,6 +276,8 @@ public:
     void update() override
     {
         attachment.reset();
+
+        button.setTitle (magicBuilder.getStyleProperty (IDs::name, configNode));
 
         auto parameter = getControlledParameterID ({});
         if (parameter.isNotEmpty())
