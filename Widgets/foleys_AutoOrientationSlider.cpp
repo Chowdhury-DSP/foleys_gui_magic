@@ -55,7 +55,7 @@ bool AutoOrientationSlider::keyPressed (const juce::KeyPress& key)
         return true;
     }
 
-    if (key == juce::KeyPress::spaceKey)
+    if (key == juce::KeyPress::deleteKey)
     {
         setValue (getDoubleClickReturnValue(), juce::sendNotification);
         announceValueChange();
