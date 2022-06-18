@@ -40,6 +40,7 @@ namespace foleys
 Container::Container (MagicGUIBuilder& builder, juce::ValueTree node)
   : GuiItem (builder, node)
 {
+    setFocusContainerType (FocusContainerType::keyboardFocusContainer);
 }
 
 void Container::update()
@@ -387,6 +388,55 @@ std::vector<std::unique_ptr<GuiItem>>::iterator Container::end()
 std::unique_ptr<juce::AccessibilityHandler> Container::createAccessibilityHandler()
 {
     return std::make_unique<juce::AccessibilityHandler> (*this, juce::AccessibilityRole::group);
+}
+
+std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverser()
+{
+    struct ContainerKeyboardFocusTraverser : juce::KeyboardFocusTraverser
+    {
+        Component* traverseSkippingSliderSubComponents (Component* current, std::function<Component* (Component*)>&& traverseFunc)
+        {
+            if (auto* next = traverseFunc (current))
+            {
+                if (auto* sliderParent = dynamic_cast<juce::Slider*> (next->getParentComponent()))
+                    return traverseSkippingSliderSubComponents (next, std::move (traverseFunc));
+
+                return next;
+            }
+
+            return nullptr;
+        }
+
+        Component* getNextComponent (Component* current) override
+        {
+            return traverseSkippingSliderSubComponents (current, [this] (Component* cur)  { return juce::KeyboardFocusTraverser::getNextComponent (cur); });
+        }
+
+        Component* getPreviousComponent (Component* current) override
+        {
+            return traverseSkippingSliderSubComponents (current, [this] (Component* cur)  { return juce::KeyboardFocusTraverser::getPreviousComponent (cur); });
+        }
+
+        std::vector<Component*> getAllComponents (Component* parentComponent) override
+        {
+            auto&& components = juce::KeyboardFocusTraverser::getAllComponents (parentComponent);
+            for (auto compIter = components.begin(); compIter != components.end(); )
+            {
+                if (auto* sliderParent = dynamic_cast<juce::Slider*> ((*compIter)->getParentComponent()))
+                {
+                    compIter = components.erase (compIter);
+                }
+                else
+                {
+                    ++compIter;
+                }
+            }
+
+            return std::move (components);
+        }
+    };
+
+    return std::make_unique<ContainerKeyboardFocusTraverser>();
 }
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE

@@ -134,6 +134,7 @@ private:
     std::vector<juce::Component::SafePointer<MagicPlotComponent>> plotComponents;
 
     std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override;
+    std::unique_ptr<juce::ComponentTraverser> createKeyboardFocusTraverser() override;
 
     std::vector<juce::String> accessibilityGroupNames;
     juce::OwnedArray<juce::Component> accessibilityGroups;

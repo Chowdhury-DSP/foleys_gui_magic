@@ -23,8 +23,11 @@ bool AutoOrientationSlider::keyPressed (const juce::KeyPress& key)
 
     auto announceValueChange = [this]()
     {
-        const auto announcement = "Slider: " + getName() + ", new value: " + getTextFromValue (getValue());
-        juce::AccessibilityHandler::postAnnouncement (announcement, juce::AccessibilityHandler::AnnouncementPriority::low);
+        juce::ignoreUnused (this);
+        // it seems like this announcement is redundant with most screen readers,
+        // but I'll leave it here for now, just in case it needs to be brought back later.
+        // const auto announcement = "Slider: " + getName() + ", new value: " + getTextFromValue (getValue());
+        // juce::AccessibilityHandler::postAnnouncement (announcement, juce::AccessibilityHandler::AnnouncementPriority::low);
     };
 
     if (key == juce::KeyPress::upKey)
