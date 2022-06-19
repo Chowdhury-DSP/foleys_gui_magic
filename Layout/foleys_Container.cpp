@@ -123,6 +123,23 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
                                                                       index (containerIndex)
         {
             setWantsKeyboardFocus (true);
+            setFocusContainerType (FocusContainerType::focusContainer);
+            setAccessible (true);
+        }
+
+        std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override
+        {
+            const auto display = container.magicBuilder.getStyleProperty (IDs::display, container.configNode).toString();
+            if (display == IDs::tabbed)
+            {
+                return std::make_unique<juce::AccessibilityHandler> (
+                    *this,
+                    juce::AccessibilityRole::group,
+                    juce::AccessibilityActions()
+                        .addAction (juce::AccessibilityActionType::press, [this] { selectThisTab (false); }));
+            }
+
+            return std::make_unique<juce::AccessibilityHandler> (*this, juce::AccessibilityRole::group);
         }
 
         bool keyPressed (const juce::KeyPress& key) override
@@ -133,14 +150,23 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
 
             if (key == juce::KeyPress::returnKey)
             {
-                container.tabbedButtons->setCurrentTabIndex (index);
-                const auto announcement = "Selected: " + getTitle().upToFirstOccurrenceOf ("(", false, false);
-                static constexpr auto priority = juce::AccessibilityHandler::AnnouncementPriority::medium;
-                juce::AccessibilityHandler::postAnnouncement (announcement, priority);
+                selectThisTab (true);
                 return true;
             }
 
             return false;
+        }
+
+        void selectThisTab (bool announce)
+        {
+            container.tabbedButtons->setCurrentTabIndex (index);
+
+            if (announce)
+            {
+                const auto announcement = "Selected: " + getTitle().upToFirstOccurrenceOf ("(", false, false);
+                static constexpr auto priority = juce::AccessibilityHandler::AnnouncementPriority::medium;
+                juce::AccessibilityHandler::postAnnouncement (announcement, priority);
+            }
         }
 
         Container& container;
@@ -152,7 +178,6 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
                                                                                        (int) accessibilityGroups.size()));
 
     newGroup->setTitle (groupName);
-    newGroup->setFocusContainerType (FocusContainerType::focusContainer);
     newGroup->addAndMakeVisible (comp);
     newGroup->setInterceptsMouseClicks (false, true);
     addAndMakeVisible (newGroup);
