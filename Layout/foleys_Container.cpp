@@ -145,12 +145,19 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
         bool keyPressed (const juce::KeyPress& key) override
         {
             const auto display = container.magicBuilder.getStyleProperty (IDs::display, container.configNode).toString();
-            if (display != IDs::tabbed)
-                return false;
 
             if (key == juce::KeyPress::returnKey)
             {
-                selectThisTab (true);
+                if (display == IDs::tabbed)
+                {
+                    selectThisTab (true);
+                }
+                else
+                {
+                    if (auto* currentlyFocusedGroup = dynamic_cast<AccessibilityTabGroup*> (getCurrentlyFocusedComponent()))
+                        currentlyFocusedGroup->getChildren().getFirst()->grabKeyboardFocus();
+                }
+
                 return true;
             }
 
@@ -384,6 +391,12 @@ void Container::updateSelectedTab()
             }
 
             child->setVisible (isSelected);
+
+            if (isSelected && isShowing())
+            {
+                child->getChildren().getFirst()->grabKeyboardFocus();
+            }
+
             index++;
         }
     }
@@ -419,14 +432,55 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
 {
     struct ContainerKeyboardFocusTraverser : juce::KeyboardFocusTraverser
     {
-        Component* traverseSkippingSliderSubComponents (Component* current, std::function<Component* (Component*)>&& traverseFunc)
+        ContainerKeyboardFocusTraverser (Container& cont) : container (cont) {}
+
+        Component* traverseSkippingSliderSubComponents (Component* current, bool forwards, std::function<Component* (Component*)>&& traverseFunc)
         {
             if (auto* next = traverseFunc (current))
             {
-                if (auto* sliderParent = dynamic_cast<juce::Slider*> (next->getParentComponent()))
-                    return traverseSkippingSliderSubComponents (next, std::move (traverseFunc));
+                if (dynamic_cast<juce::Slider*> (next->getParentComponent()) != nullptr)
+                    return traverseSkippingSliderSubComponents (next, forwards, std::move (traverseFunc));
 
                 return next;
+            }
+
+            auto* parent = current->getParentComponent();
+            while (parent != nullptr)
+            {
+                if (parent == &container)
+                {
+                    if (forwards)
+                    {
+                        if (auto parentTraverser = container.getParentComponent()->createKeyboardFocusTraverser())
+                        {
+                            if (auto* fallbackNext = parentTraverser->getNextComponent (&container))
+                                return fallbackNext;
+                        }
+                    }
+
+                    {
+                        parent = container.getParentComponent();
+                        while (parent != nullptr)
+                        {
+                            if (auto* parentContainer = dynamic_cast<Container*> (parent))
+                            {
+                                for (int i = 0; i < parentContainer->accessibilityGroups.size(); ++i)
+                                {
+                                    if (parentContainer->accessibilityGroups[i]->getChildren().contains (&container))
+                                    {
+                                        return parentContainer->accessibilityGroups[juce::negativeAwareModulo (i - 1, parentContainer->accessibilityGroups.size())];
+                                    }
+                                }
+                            }
+
+                            parent = parent->getParentComponent();
+                        }
+                    }
+
+                    break;
+                }
+
+                parent = parent->getParentComponent();
             }
 
             return nullptr;
@@ -434,12 +488,12 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
 
         Component* getNextComponent (Component* current) override
         {
-            return traverseSkippingSliderSubComponents (current, [this] (Component* cur)  { return juce::KeyboardFocusTraverser::getNextComponent (cur); });
+            return traverseSkippingSliderSubComponents (current, true, [this] (Component* cur)  { return juce::KeyboardFocusTraverser::getNextComponent (cur); });
         }
 
         Component* getPreviousComponent (Component* current) override
         {
-            return traverseSkippingSliderSubComponents (current, [this] (Component* cur)  { return juce::KeyboardFocusTraverser::getPreviousComponent (cur); });
+            return traverseSkippingSliderSubComponents (current, false, [this] (Component* cur)  { return juce::KeyboardFocusTraverser::getPreviousComponent (cur); });
         }
 
         std::vector<Component*> getAllComponents (Component* parentComponent) override
@@ -447,7 +501,7 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
             auto&& components = juce::KeyboardFocusTraverser::getAllComponents (parentComponent);
             for (auto compIter = components.begin(); compIter != components.end(); )
             {
-                if (auto* sliderParent = dynamic_cast<juce::Slider*> ((*compIter)->getParentComponent()))
+                if (dynamic_cast<juce::Slider*> ((*compIter)->getParentComponent()) != nullptr)
                 {
                     compIter = components.erase (compIter);
                 }
@@ -459,9 +513,11 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
 
             return std::move (components);
         }
+
+        Container& container;
     };
 
-    return std::make_unique<ContainerKeyboardFocusTraverser>();
+    return std::make_unique<ContainerKeyboardFocusTraverser> (*this);
 }
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE
