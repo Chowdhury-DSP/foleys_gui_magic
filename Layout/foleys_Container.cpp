@@ -148,9 +148,9 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
 
             if (key == juce::KeyPress::returnKey)
             {
-                if (display == IDs::tabbed)
+                if (display == IDs::tabbed && container.tabbedButtons->getCurrentTabIndex() != index)
                 {
-                    selectThisTab (true);
+                    selectThisTab (false);
                 }
                 else
                 {
