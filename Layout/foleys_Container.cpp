@@ -125,12 +125,13 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
             setWantsKeyboardFocus (true);
             setFocusContainerType (FocusContainerType::focusContainer);
             setAccessible (true);
+
+            setComponentID ("accessibility_group");
         }
 
         std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override
         {
-            const auto display = container.magicBuilder.getStyleProperty (IDs::display, container.configNode).toString();
-            if (display == IDs::tabbed)
+            if (container.layout == Layout::Tabbed)
             {
                 return std::make_unique<juce::AccessibilityHandler> (
                     *this,
@@ -144,11 +145,9 @@ void Container::addComponentToAccessibilityGroup (const juce::String& groupName,
 
         bool keyPressed (const juce::KeyPress& key) override
         {
-            const auto display = container.magicBuilder.getStyleProperty (IDs::display, container.configNode).toString();
-
             if (key == juce::KeyPress::returnKey)
             {
-                if (display == IDs::tabbed && container.tabbedButtons->getCurrentTabIndex() != index)
+                if (container.layout == Layout::Tabbed && container.tabbedButtons->getCurrentTabIndex() != index)
                 {
                     selectThisTab (false);
                 }
@@ -380,6 +379,8 @@ void Container::changeListenerCallback (juce::ChangeBroadcaster*)
 void Container::updateSelectedTab()
 {
     {
+        juce::ScopedValueSetter<bool> svs { skipSettingTabAsDefaultComponent, true };
+
         int index = 0;
         for (auto& child : children)
         {
@@ -394,7 +395,11 @@ void Container::updateSelectedTab()
 
             if (isSelected && isShowing())
             {
-                child->getChildren().getFirst()->grabKeyboardFocus();
+                if (auto* childContainer = dynamic_cast<Container*> (child.get()))
+                    childContainer->shouldFocusFirstComponent = shouldFocusFirstComponent;
+
+                child->grabKeyboardFocus();
+                shouldFocusFirstComponent = true; // reset this to the default setting every time
             }
 
             index++;
@@ -441,6 +446,9 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
                 if (dynamic_cast<juce::Slider*> (next->getParentComponent()) != nullptr)
                     return traverseSkippingSliderSubComponents (next, forwards, std::move (traverseFunc));
 
+                if (next->getComponentID() == "accessibility_group")
+                    return traverseSkippingSliderSubComponents (next, forwards, std::move (traverseFunc));
+
                 return next;
             }
 
@@ -449,32 +457,48 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
             {
                 if (parent == &container)
                 {
-                    if (forwards)
+                    parent = container.getParentComponent();
+                    foleys::Container* currentGroup = nullptr;
+                    while (parent != nullptr)
                     {
-                        if (auto parentTraverser = container.getParentComponent()->createKeyboardFocusTraverser())
+                        if (auto* parentContainer = dynamic_cast<Container*> (parent))
                         {
-                            if (auto* fallbackNext = parentTraverser->getNextComponent (&container))
-                                return fallbackNext;
-                        }
-                    }
-
-                    {
-                        parent = container.getParentComponent();
-                        while (parent != nullptr)
-                        {
-                            if (auto* parentContainer = dynamic_cast<Container*> (parent))
+                            if (parentContainer->layout == Layout::Tabbed)
                             {
-                                for (int i = 0; i < parentContainer->accessibilityGroups.size(); ++i)
+                                currentGroup = parentContainer;
+                                const auto newTabIndex = parentContainer->tabbedButtons->getCurrentTabIndex() + (forwards ? 1 : -1);
+                                if (juce::isPositiveAndBelow (newTabIndex, parentContainer->tabbedButtons->getNumTabs()))
                                 {
-                                    if (parentContainer->accessibilityGroups[i]->getChildren().contains (&container))
-                                    {
-                                        return parentContainer->accessibilityGroups[juce::negativeAwareModulo (i - 1, parentContainer->accessibilityGroups.size())];
-                                    }
+                                    parentContainer->shouldFocusFirstComponent = forwards;
+                                    parentContainer->tabbedButtons->setCurrentTabIndex (newTabIndex);
+                                    return nullptr;
                                 }
                             }
+                            else
+                            {
+                                auto& currentLevelChildren = parentContainer->children;
+                                if ((currentGroup == currentLevelChildren.back().get() && forwards) || (currentGroup == currentLevelChildren.front().get() && ! forwards))
+                                {
+                                    // end of this group! we need to go up a level...
+                                    currentGroup = parentContainer;
+                                }
+                                else
+                                {
+                                    const auto& currentGroupIter = std::find_if (currentLevelChildren.begin(), currentLevelChildren.end(), [currentGroup] (auto& child)
+                                                                                 { return child.get() == currentGroup; });
+                                    jassert (currentGroupIter != currentLevelChildren.end()); // why is the current group not a child of the current parent??
 
-                            parent = parent->getParentComponent();
+                                    auto* newGroup = (currentGroupIter + (forwards ? 1 : -1))->get();
+
+                                    if (auto* newGroupContainer = dynamic_cast<foleys::Container*> (newGroup))
+                                        newGroupContainer->shouldFocusFirstComponent = forwards;
+
+                                    return newGroup;
+                                }
+                            }
                         }
+
+                        parent = parent->getParentComponent();
                     }
 
                     break;
@@ -505,6 +529,10 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
                 {
                     compIter = components.erase (compIter);
                 }
+                else if ((*compIter)->getComponentID() == "accessibility_group")
+                {
+                    compIter = components.erase (compIter);
+                }
                 else
                 {
                     ++compIter;
@@ -514,10 +542,68 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
             return std::move (components);
         }
 
+        Component* getDefaultComponent (Component* parentComponent) override
+        {
+            Component* returnComp = nullptr;
+
+            const auto& defaultComponents = getAllComponents (parentComponent);
+            auto isKeyboardFocusable = [] (const Component* comp, const Component* cont)
+            {
+                return comp->getWantsKeyboardFocus() && cont->isParentOf (comp);
+            };
+
+            if (container.shouldFocusFirstComponent)
+            {
+                for (auto* comp : defaultComponents)
+                {
+                    if (isKeyboardFocusable (comp, parentComponent))
+                    {
+                        returnComp = comp;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for (auto it = defaultComponents.rbegin(); it != defaultComponents.rend(); ++it)
+                {
+                    auto* comp = *it;
+                    if (isKeyboardFocusable (comp, parentComponent))
+                    {
+                        returnComp = comp;
+                        break;
+                    }
+                }
+            }
+
+            const auto& components = container.children;
+            if (returnComp == nullptr && ! components.empty())
+            {
+                returnComp = container.shouldFocusFirstComponent ? components.front().get() : components.back().get();
+
+                if (auto* returnCompContainer = dynamic_cast<foleys::Container*> (returnComp))
+                {
+                    returnCompContainer->shouldFocusFirstComponent = container.shouldFocusFirstComponent;
+                    if (! returnCompContainer->skipSettingTabAsDefaultComponent)
+                    {
+                        if (container.layout == Layout::Tabbed)
+                        {
+                            container.tabbedButtons->setCurrentTabIndex (container.shouldFocusFirstComponent ? 0 : container.tabbedButtons->getNumTabs() - 1);
+                            return returnComp;
+                        }
+                    }
+                }
+            }
+
+            container.shouldFocusFirstComponent = true; // reset this to the default setting every time
+            return returnComp;
+        }
+
         Container& container;
     };
 
     return std::make_unique<ContainerKeyboardFocusTraverser> (*this);
+//    return std::make_unique<juce::KeyboardFocusTraverser>();
 }
 
 #if FOLEYS_SHOW_GUI_EDITOR_PALLETTE

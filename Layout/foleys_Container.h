@@ -128,13 +128,15 @@ private:
     Layout layout = Layout::FlexBox;
     juce::FlexBox flexBox;
 
-    std::unique_ptr<juce::TabbedButtonBar>  tabbedButtons;
+    std::unique_ptr<juce::TabbedButtonBar> tabbedButtons;
     std::vector<std::unique_ptr<GuiItem>> children;
 
     std::vector<juce::Component::SafePointer<MagicPlotComponent>> plotComponents;
 
     std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override;
     std::unique_ptr<juce::ComponentTraverser> createKeyboardFocusTraverser() override;
+    bool shouldFocusFirstComponent = true;
+    bool skipSettingTabAsDefaultComponent = false;
 
     std::vector<juce::String> accessibilityGroupNames;
     juce::OwnedArray<juce::Component> accessibilityGroups;
