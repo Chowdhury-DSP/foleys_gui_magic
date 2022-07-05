@@ -458,9 +458,29 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
                 if (parent == &container)
                 {
                     parent = container.getParentComponent();
-                    foleys::Container* currentGroup = nullptr;
+                    foleys::Container* currentGroup = &container;
                     while (parent != nullptr)
                     {
+                        if (auto* magicEditor = dynamic_cast<MagicPluginEditor*> (parent))
+                        {
+                            Container* rootContainer = nullptr;
+                            for (auto* comp : magicEditor->getChildren())
+                            {
+                                rootContainer = dynamic_cast<Container*> (comp);
+                                if (rootContainer != nullptr)
+                                    break;
+                            }
+
+                            jassert (rootContainer != nullptr); // editor has no root node?!?!?!
+
+                            // we're at the top-most level now...
+                            auto& nextComp = forwards ? rootContainer->children.front() : rootContainer->children.back();
+                            if (auto* nextContainer = dynamic_cast<Container*> (nextComp.get()))
+                                nextContainer->shouldFocusFirstComponent = forwards;
+
+                            return nextComp.get();
+                        }
+
                         if (auto* parentContainer = dynamic_cast<Container*> (parent))
                         {
                             if (parentContainer->layout == Layout::Tabbed)
@@ -484,16 +504,23 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
                                 }
                                 else
                                 {
-                                    const auto& currentGroupIter = std::find_if (currentLevelChildren.begin(), currentLevelChildren.end(), [currentGroup] (auto& child)
+                                    auto&& currentGroupIter = std::find_if (currentLevelChildren.begin(), currentLevelChildren.end(), [currentGroup] (auto& child)
                                                                                  { return child.get() == currentGroup; });
                                     jassert (currentGroupIter != currentLevelChildren.end()); // why is the current group not a child of the current parent??
 
-                                    auto* newGroup = (currentGroupIter + (forwards ? 1 : -1))->get();
+                                    while (currentGroupIter != currentLevelChildren.end())
+                                    {
+                                        auto* newGroup = forwards ? (++currentGroupIter)->get() : (--currentGroupIter)->get();
+                                        if (auto* newGroupContainer = dynamic_cast<foleys::Container*> (newGroup))
+                                        {
+                                            newGroupContainer->shouldFocusFirstComponent = forwards;
+                                            return newGroupContainer;
+                                        }
 
-                                    if (auto* newGroupContainer = dynamic_cast<foleys::Container*> (newGroup))
-                                        newGroupContainer->shouldFocusFirstComponent = forwards;
-
-                                    return newGroup;
+                                        if (currentGroupIter == currentLevelChildren.begin())
+                                            break;
+                                    }
+                                    return {};
                                 }
                             }
                         }
