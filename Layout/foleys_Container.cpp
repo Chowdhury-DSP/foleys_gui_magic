@@ -520,7 +520,9 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
                                         if (currentGroupIter == currentLevelChildren.begin())
                                             break;
                                     }
-                                    return {};
+
+                                    // There's no more containers n this group! we need to go up a level...
+                                    currentGroup = parentContainer;
                                 }
                             }
                         }
