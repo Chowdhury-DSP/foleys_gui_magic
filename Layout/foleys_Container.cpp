@@ -508,7 +508,7 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
                                                                                  { return child.get() == currentGroup; });
                                     jassert (currentGroupIter != currentLevelChildren.end()); // why is the current group not a child of the current parent??
 
-                                    while (currentGroupIter != currentLevelChildren.end())
+                                    while (*currentGroupIter != nullptr)
                                     {
                                         auto* newGroup = forwards ? (++currentGroupIter)->get() : (--currentGroupIter)->get();
                                         if (auto* newGroupContainer = dynamic_cast<foleys::Container*> (newGroup))
@@ -517,7 +517,10 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
                                             return newGroupContainer;
                                         }
 
-                                        if (currentGroupIter == currentLevelChildren.begin())
+                                        if (! forwards && currentGroupIter == currentLevelChildren.begin())
+                                            break;
+
+                                        if (forwards && *currentGroupIter == currentLevelChildren.back())
                                             break;
                                     }
 
