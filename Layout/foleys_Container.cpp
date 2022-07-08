@@ -628,6 +628,10 @@ std::unique_ptr<juce::ComponentTraverser> Container::createKeyboardFocusTraverse
             }
 
             container.shouldFocusFirstComponent = true; // reset this to the default setting every time
+
+            if (returnComp == parentComponent)
+                returnComp = nullptr; // no infinite recursion!
+
             return returnComp;
         }
 
