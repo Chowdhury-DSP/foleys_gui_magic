@@ -83,7 +83,7 @@ void Decorator::drawDecorator (juce::Graphics& g, juce::Rectangle<int> bounds)
 
     if (caption.isNotEmpty())
     {
-        captionSize = fmax(static_cast<float>(bounds.getHeight()) * 0.25f, 20.0f);
+        captionSize = juce::jmax(static_cast<float>(bounds.getHeight()) * 0.25f, 20.0f);
         auto clientBounds = getClientBounds (bounds);
 
         g.setColour (captionColour);
