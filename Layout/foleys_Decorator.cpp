@@ -34,9 +34,18 @@
  ==============================================================================
  */
 
-
 namespace foleys
 {
+static auto getAdjustedCaptionSize (int defaultHeight, float defaultCaptionSize, int componentHeight)
+{
+    if (defaultHeight == 0)
+        return defaultCaptionSize;
+
+    if (defaultCaptionSize == 0.0f)
+        return 0.0f;
+
+    return (defaultCaptionSize / (float) defaultHeight) * (float) componentHeight;
+}
 
 void Decorator::drawDecorator (juce::Graphics& g, juce::Rectangle<int> bounds)
 {
@@ -83,12 +92,11 @@ void Decorator::drawDecorator (juce::Graphics& g, juce::Rectangle<int> bounds)
 
     if (caption.isNotEmpty())
     {
-        captionSize = juce::jmax(static_cast<float>(bounds.getHeight()) * 0.25f, 20.0f);
         auto clientBounds = getClientBounds (bounds);
 
         g.setColour (captionColour);
 
-        g.setFont (juce::Font (captionSize * 0.8f).boldened());
+        g.setFont (juce::Font (getAdjustedCaptionSize (defaultHeight, captionSize, bounds.getHeight()) * 0.8f).boldened());
         g.drawFittedText (caption, clientBounds.caption, justification.getOnlyHorizontalFlags(), 1);
     }
 }
@@ -129,13 +137,15 @@ Decorator::ClientBounds Decorator::getClientBounds (juce::Rectangle<int> overall
 
     if (caption.isNotEmpty())
     {
-        juce::Font f (captionSize * 0.8f, juce::Font::bold);
+        const auto captionSizeToUse = getAdjustedCaptionSize (defaultHeight, captionSize, overallBounds.getHeight());
+
+        juce::Font f (captionSizeToUse * 0.8f, juce::Font::bold);
         auto w = f.getStringWidth (caption);
 
         if (justification.getOnlyVerticalFlags() & juce::Justification::top)
-            captionBox = box.removeFromTop (captionSize).toNearestInt();
+            captionBox = box.removeFromTop (captionSizeToUse).toNearestInt();
         else if (justification.getOnlyVerticalFlags() & juce::Justification::bottom)
-            captionBox = box.removeFromBottom (captionSize).toNearestInt();
+            captionBox = box.removeFromBottom (captionSizeToUse).toNearestInt();
         else
         {
             if (justification.getOnlyHorizontalFlags() & juce::Justification::left)
@@ -168,15 +178,19 @@ void Decorator::configure (MagicGUIBuilder& builder, const juce::ValueTree& node
     if (! radiusVar.isVoid())
         radius = static_cast<float> (radiusVar);
 
-    caption    = node.getProperty (IDs::caption, juce::String());
+    caption = node.getProperty (IDs::caption, juce::String());
     tabCaption = node.getProperty (IDs::tabCaption, juce::String());
-    auto tc    = builder.getStyleProperty (IDs::tabColour, node);
+    auto tc = builder.getStyleProperty (IDs::tabColour, node);
     if (! tc.isVoid())
         tabColour = stylesheet.getColour (tc.toString());
 
     auto sizeVar = builder.getStyleProperty (IDs::captionSize, node);
     if (! sizeVar.isVoid())
         captionSize = static_cast<float> (sizeVar);
+
+    auto defaultHeightVar = builder.getStyleProperty (IDs::defaultHeight, node);
+    if (! defaultHeightVar.isVoid())
+        defaultHeight = static_cast<int> (defaultHeightVar);
 
     auto placementVar = builder.getStyleProperty (IDs::captionPlacement, node);
     if (! placementVar.isVoid())
@@ -217,6 +231,7 @@ void Decorator::reset()
     justification = juce::Justification::centredTop;
     captionSize   = 20.0f;
     captionColour = juce::Colours::silver;
+    defaultHeight = 0;
 
     tabCaption.clear();
     tabColour = juce::Colours::darkgrey;

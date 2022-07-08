@@ -81,7 +81,8 @@ private:
     juce::String        caption;
     juce::Justification justification = juce::Justification::centredTop;
     float               captionSize   = 20.0f;
-    juce::Colour        captionColour = juce::Colours::silver;
+    juce::Colour captionColour = juce::Colours::silver;
+    int defaultHeight = 0;
 
     juce::String        tabCaption;
     juce::Colour        tabColour;
