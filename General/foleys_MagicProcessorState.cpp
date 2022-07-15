@@ -165,6 +165,7 @@ void MagicProcessorState::updatePlayheadInformation (juce::AudioPlayHead* playhe
     if (playhead == nullptr)
         return;
 
+#if JUCE_VERSION < 0x070000
     juce::AudioPlayHead::CurrentPositionInfo info;
     playhead->getCurrentPosition (info);
 
@@ -174,6 +175,18 @@ void MagicProcessorState::updatePlayheadInformation (juce::AudioPlayHead* playhe
     timeSigDenominator.store (info.timeSigDenominator);
     isPlaying.store (info.isPlaying);
     isRecording.store (info.isRecording);
+#else
+    auto playheadPosition = playhead->getPosition();
+    if (playheadPosition.hasValue())
+    {
+        bpm.store (playheadPosition->getBpm().orFallback (120.0));
+        timeInSeconds.store (playheadPosition->getTimeInSeconds().orFallback (0.0));
+        timeSigNumerator.store (playheadPosition->getTimeSignature().orFallback (juce::AudioPlayHead::TimeSignature {4, 4}).numerator);
+        timeSigDenominator.store (playheadPosition->getTimeSignature().orFallback (juce::AudioPlayHead::TimeSignature {4, 4}).denominator);
+        isPlaying.store (playheadPosition->getIsPlaying());
+        isRecording.store (playheadPosition->getIsRecording());
+    }
+#endif
 }
 
 void MagicProcessorState::setPlayheadUpdateFrequency (int frequency)
