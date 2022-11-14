@@ -362,12 +362,11 @@ void Container::configureFlexBox (const juce::ValueTree& node)
 
 void Container::timerCallback()
 {
-    auto needsRepaint = false;
     for (auto p : plotComponents)
-        if (p) needsRepaint |= p->needsUpdate();
-
-    if (needsRepaint)
-        repaint();
+    {
+        if(p->needsUpdate())
+            p->repaint();
+    }
 }
 
 void Container::changeListenerCallback (juce::ChangeBroadcaster*)
