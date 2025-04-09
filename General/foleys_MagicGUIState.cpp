@@ -49,7 +49,7 @@ void MagicGUIState::addBackgroundProcessing (MagicPlotSource* source)
     if (auto* job = source->getBackgroundJob())
     {
         visualiserThread.addTimeSliceClient (job);
-        visualiserThread.startThread (3);
+        visualiserThread.startThread (juce::Thread::Priority::high);
     }
 }
 
